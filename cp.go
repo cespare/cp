@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var ErrCopyFileWithDir = errors.New("CopyFile called with dir argument")
+var errCopyFileWithDir = errors.New("dir argument to CopyFile")
 
 // CopyFile copies the file with path src to dst. The new file must not exist.
 // It is created with the same permissions as src.
@@ -24,7 +24,7 @@ func CopyFile(dst, src string) error {
 		return err
 	}
 	if rstat.IsDir() {
-		return ErrCopyFileWithDir
+		return errCopyFileWithDir
 	}
 
 	wf, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_EXCL, rstat.Mode())
