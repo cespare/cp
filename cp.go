@@ -1,3 +1,4 @@
+// Package cp offers simple file and directory copying for Go.
 package cp
 
 import (
