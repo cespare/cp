@@ -18,14 +18,45 @@ func TestCopyFile(t *testing.T) {
 	}
 	td.checkContentsMode("b.txt", "contents of a", 0644)
 
-	err := CopyFile(td.path("c.txt"), td.path("nonexistent"))
-	if !os.IsNotExist(err) {
+	if err := CopyFile(td.path("b.txt"), td.path("a.txt")); !os.IsExist(err) {
+		t.Errorf("CopyFile(b.txt, a.txt) (second time): got %v; want os.IsExist(err)", err)
+	}
+	td.checkContentsMode("b.txt", "contents of a", 0644)
+
+	if err := CopyFile(td.path("c.txt"), td.path("nonexistent")); !os.IsNotExist(err) {
 		t.Errorf("CopyFile(c.txt, nonexistent): got %v; want os.IsNotExist(err)", err)
 	}
 
 	td.mkdir("d", 0755)
 	if err := CopyFile(td.path("c.txt"), td.path("d")); err != errCopyFileWithDir {
 		t.Errorf("CopyFile(c.txt, d): got %v; want errCopyFileWithDir", err)
+	}
+}
+
+func TestCopyFileOverwrite(t *testing.T) {
+	td := newTestDir(t)
+	defer td.remove()
+
+	td.create("a.txt", "first", 0644)
+	if err := CopyFileOverwrite(td.path("b.txt"), td.path("a.txt")); err != nil {
+		t.Errorf("CopyFileOverwite(b.txt, a.txt): %s", err)
+	}
+	td.checkContentsMode("b.txt", "first", 0644)
+
+	td.create("c.txt", "second", 0600)
+	if err := CopyFileOverwrite(td.path("b.txt"), td.path("c.txt")); err != nil {
+		t.Errorf("CopyFileOverwite(b.txt, c.txt): %s", err)
+	}
+	td.checkContentsMode("b.txt", "second", 0600)
+
+	err := CopyFileOverwrite(td.path("b.txt"), td.path("nonexistent"))
+	if !os.IsNotExist(err) {
+		t.Errorf("CopyFileOverwite(b.txt, nonexistent): got %v; want os.IsNotExist(err)", err)
+	}
+
+	td.mkdir("d", 0755)
+	if err := CopyFileOverwrite(td.path("b.txt"), td.path("d")); err != errCopyFileWithDir {
+		t.Errorf("CopyFileOverwrite(c.txt, d): got %v; want errCopyFileWithDir", err)
 	}
 }
 
@@ -56,12 +87,39 @@ func TestCopyAll(t *testing.T) {
 	}
 }
 
+func TestCopyAllOverwrite(t *testing.T) {
+	td := newTestDir(t)
+	defer td.remove()
+
+	td.mkdir("d0", 0755)
+	td.mkdir("d0/d1", 0755)
+	td.create("d0/a.txt", "a", 0644)
+	td.create("d0/d1/b.txt", "b", 0644)
+	td.create("d0/d1/c.txt", "c", 0644)
+
+	td.mkdir("target", 0777)
+	td.mkdir("target/d1", 0777)
+	td.create("target/d1/b.txt", "bbb", 0660)
+
+	if err := CopyAllOverwrite(td.path("target"), td.path("d0")); err != nil {
+		t.Fatal(err)
+	}
+
+	td.checkAll(
+		"target",
+		"a.txt", "a",
+		"d1/b.txt", "b",
+		"d1/c.txt", "c",
+	)
+}
+
 type testDir struct {
 	t   *testing.T
 	dir string
 }
 
 func newTestDir(t *testing.T) testDir {
+	t.Helper()
 	dir, err := ioutil.TempDir("", "cp-test-")
 	if err != nil {
 		t.Fatalf("Cannot create tempdir for test: %s", err)
@@ -70,6 +128,7 @@ func newTestDir(t *testing.T) testDir {
 }
 
 func (td testDir) remove() {
+	td.t.Helper()
 	if err := os.RemoveAll(td.dir); err != nil {
 		td.t.Errorf("Error cleaning up tempdir: %s", err)
 	}
@@ -80,6 +139,7 @@ func (td testDir) path(name string) string {
 }
 
 func (td testDir) create(name, contents string, perm os.FileMode) {
+	td.t.Helper()
 	err := ioutil.WriteFile(td.path(name), []byte(contents), perm)
 	if err != nil {
 		td.t.Fatal(err)
@@ -87,12 +147,14 @@ func (td testDir) create(name, contents string, perm os.FileMode) {
 }
 
 func (td testDir) mkdir(name string, perm os.FileMode) {
+	td.t.Helper()
 	if err := os.Mkdir(td.path(name), perm); err != nil {
 		td.t.Fatal(err)
 	}
 }
 
 func (td testDir) checkContentsMode(name, contents string, perm os.FileMode) {
+	td.t.Helper()
 	b, err := ioutil.ReadFile(td.path(name))
 	if err != nil {
 		td.t.Error(err)
@@ -113,6 +175,7 @@ func (td testDir) checkContentsMode(name, contents string, perm os.FileMode) {
 }
 
 func (td testDir) checkAll(dir string, nameContents ...string) {
+	td.t.Helper()
 	if len(nameContents)%2 != 0 {
 		panic("bad nameContents pairs")
 	}
