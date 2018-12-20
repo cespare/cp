@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 var errCopyFileWithDir = errors.New("dir argument to CopyFile")
@@ -83,7 +82,12 @@ func makeWalkFn(dst, src string, flag int) filepath.WalkFunc {
 		if err != nil {
 			return err
 		}
-		dstPath := filepath.Join(dst, strings.TrimPrefix(path, src))
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			// Given the Walk contract, Rel must succeed.
+			panic("shouldn't happen")
+		}
+		dstPath := filepath.Join(dst, rel)
 		if info.IsDir() {
 			err := os.Mkdir(dstPath, info.Mode())
 			// In overwrite mode, allow the directory to already exist

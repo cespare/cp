@@ -113,6 +113,16 @@ func TestCopyAllOverwrite(t *testing.T) {
 	)
 }
 
+func TestCopyDotSlash(t *testing.T) {
+	td := newTestDir(t)
+	defer td.remove()
+
+	if err := CopyAllOverwrite(td.path("testdata"), "./testdata"); err != nil {
+		t.Fatal(err)
+	}
+	td.checkAll("testdata", "a.txt", "a\n")
+}
+
 type testDir struct {
 	t   *testing.T
 	dir string
