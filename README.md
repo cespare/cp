@@ -1,6 +1,6 @@
 # cp
 
-[![GoDoc](https://godoc.org/github.com/cespare/cp?status.svg)](https://godoc.org/github.com/cespare/cp)
+[![Go Reference](https://pkg.go.dev/badge/github.com/cespare/cp.svg)](https://pkg.go.dev/github.com/cespare/cp)
 
 cp is a small Go package for copying files and directories.
 
