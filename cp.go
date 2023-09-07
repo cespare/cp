@@ -3,6 +3,7 @@ package cp
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -38,7 +39,7 @@ func copyFile(dst, src string, flag int) error {
 		return err
 	}
 	if rstat.IsDir() {
-		return errCopyFileWithDir
+		return fmt.Errorf("%w: %s", errCopyFileWithDir, src)
 	}
 
 	wf, err := os.OpenFile(dst, flag, rstat.Mode())
