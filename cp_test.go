@@ -2,6 +2,7 @@ package cp
 
 import (
 	"io/ioutil"
+	"errors"
 	"os"
 	"path/filepath"
 	"sort"
@@ -28,7 +29,7 @@ func TestCopyFile(t *testing.T) {
 	}
 
 	td.mkdir("d", 0755)
-	if err := CopyFile(td.path("c.txt"), td.path("d")); err != errCopyFileWithDir {
+	if err := CopyFile(td.path("c.txt"), td.path("d")); !errors.Is(err, errCopyFileWithDir) {
 		t.Errorf("CopyFile(c.txt, d): got %v; want errCopyFileWithDir", err)
 	}
 }
@@ -55,7 +56,7 @@ func TestCopyFileOverwrite(t *testing.T) {
 	}
 
 	td.mkdir("d", 0755)
-	if err := CopyFileOverwrite(td.path("b.txt"), td.path("d")); err != errCopyFileWithDir {
+	if err := CopyFileOverwrite(td.path("b.txt"), td.path("d")); !errors.Is(err, errCopyFileWithDir) {
 		t.Errorf("CopyFileOverwrite(c.txt, d): got %v; want errCopyFileWithDir", err)
 	}
 }
